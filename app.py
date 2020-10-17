@@ -52,6 +52,9 @@ def welcome():
 @app.route("/api/v1.0/precipitation")
 def precipitation():
     """Return the precipitation data for the last year"""
+    # Create our session (link) from Python to the database
+    session = Session(engine)
+
     # Calculate the date 1 year ago from last date in database
     prev_year = dt.date(2017, 8, 23) - dt.timedelta(days=365)
 
@@ -59,15 +62,22 @@ def precipitation():
     precipitation = session.query(Measurement.date, Measurement.prcp).\
         filter(Measurement.date >= prev_year).all()
 
+    session.close()   
+
     # Dict with date as the key and prcp as the value
     precip = {date: prcp for date, prcp in precipitation}
     return jsonify(precip)
 
+    
 
 @app.route("/api/v1.0/stations")
 def stations():
     """Return a list of stations."""
+    session = Session(engine)
+
     results = session.query(Station.station).all()
+
+    session.close() 
 
     # Unravel results into a 1D array and convert to a list
     stations = list(np.ravel(results))
@@ -77,6 +87,8 @@ def stations():
 @app.route("/api/v1.0/tobs")
 def temp_monthly():
     """Return the temperature observations (tobs) for previous year."""
+    session = Session(engine)
+
     # Calculate the date 1 year ago from last date in database
     prev_year = dt.date(2017, 8, 23) - dt.timedelta(days=365)
 
@@ -87,6 +99,8 @@ def temp_monthly():
 
     # Unravel results into a 1D array and convert to a list
     temps = list(np.ravel(results))
+
+    session.close()
 
     # Return the results
     return jsonify(temps=temps)
@@ -112,8 +126,12 @@ def stats(start=None, end=None):
     results = session.query(*sel).\
         filter(Measurement.date >= start).\
         filter(Measurement.date <= end).all()
+        
     # Unravel results into a 1D array and convert to a list
     temps = list(np.ravel(results))
+
+    session.close()
+
     return jsonify(temps=temps)
 
 
